@@ -20,16 +20,6 @@
       --border: rgba(0, 0, 0, 0.05);
     }
 
-    body.dark {
-      --bg: #0B0C10;
-      --surface: #1A1C23;
-      --surface-light: #252833;
-      --accent: #3D6AFA;
-      --text-main: #FFFFFF;
-      --text-dim: #94A3B8;
-      --border: rgba(255, 255, 255, 0.08);
-    }
-
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
@@ -59,7 +49,6 @@
       flex-direction: column;
       overflow: hidden;
       box-shadow: 0 0 0 1px var(--border);
-      transition: background 0.3s;
       margin: auto;
     }
 
@@ -162,19 +151,9 @@
     }
     .account-center i { color: var(--accent); font-size: 18px; }
     .user-name { font-weight: 700; font-size: 18px; }
-    .header-actions {
-      position: absolute;
-      right: 16px;
-      display: flex;
-      gap: 12px;
-    }
-    .header-actions i { font-size: 20px; color: var(--text-dim); cursor: pointer; }
 
     /* Баланс и процент */
     .balance-row {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
       padding: 8px 16px 16px;
     }
     .balance-hero .val {
@@ -243,17 +222,21 @@
     }
     .asset-right { text-align: right; }
 
-    /* Вертикальные списки (история, браузер, коллекции) */
+    /* Центрирование контента в истории/браузере/коллекциях */
     .vertical-section {
       padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     .section-header {
-      font-size: 20px; font-weight: 700; margin-bottom: 16px;
+      font-size: 20px; font-weight: 700; margin-bottom: 16px; text-align: center;
     }
     .vertical-list {
       display: flex;
       flex-direction: column;
       gap: 12px;
+      width: 100%;
     }
     .list-item {
       background: var(--surface);
@@ -295,16 +278,6 @@
     .history-positive { color: var(--success); }
     .history-negative { color: var(--danger); }
 
-    /* Настройки */
-    .theme-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px;
-      background: var(--surface-light);
-      border-radius: 18px;
-    }
-
     .modal-overlay {
       position: absolute; inset: 0; background: rgba(0,0,0,0.5);
       backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center;
@@ -315,7 +288,7 @@
       border: 1px solid var(--border); max-height: 80vh; overflow-y: auto;
     }
 
-    /* Нижняя панель — поднята выше */
+    /* Нижняя панель */
     .bottom-nav {
       height: 140px;
       background: var(--surface);
@@ -344,9 +317,10 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Pull-to-refresh индикатор */
+    /* Pull-to-refresh — плавная анимация */
     .pull-indicator {
-      text-align: center; padding: 8px; color: var(--text-dim); font-size: 13px;
+      text-align: center; padding: 12px; color: var(--text-dim); font-size: 13px;
+      transition: all 0.2s ease;
     }
 
     /* Менеджер кошельков */
@@ -383,6 +357,19 @@
       display: flex; align-items: center; justify-content: center;
       color: white; font-size: 12px;
     }
+    .logout-btn {
+      margin-top: 8px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 12px;
+      color: var(--danger);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      width: 100%;
+      transition: 0.2s;
+    }
   </style>
 </head>
 <body>
@@ -418,21 +405,17 @@
         <span class="user-name" id="active-user-display">Account</span>
         <i class="fas fa-chevron-down" style="font-size: 12px;"></i>
       </div>
-      <div class="header-actions">
-        <i class="fas fa-gear" onclick="app.switchView('settings')" title="Настройки"></i>
-      </div>
     </div>
 
     <!-- Вкладка "Кошелёк" -->
     <div id="view-wallet" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
-      <!-- Pull-to-refresh -->
       <div id="pull-refresh" style="overflow-y: auto; flex:1;" ontouchstart="app.touchStart(event)" ontouchmove="app.touchMove(event)" ontouchend="app.touchEnd(event)">
-        <div id="pull-indicator" class="pull-indicator" style="display:none;"><i class="fas fa-arrow-down"></i> Потяните для обновления</div>
+        <div id="pull-indicator" class="pull-indicator"> </div>
         <div class="balance-row">
           <div class="balance-hero">
             <div class="val" id="main-balance">$0.00</div>
+            <div class="portfolio-change" id="portfolio-change">+2.72% <i class="fas fa-arrow-up" style="color:var(--success);"></i></div>
           </div>
-          <div class="portfolio-change" id="portfolio-change">+2.72% <i class="fas fa-arrow-up" style="color:var(--success);"></i></div>
         </div>
         <div class="actions-row">
           <div class="btn-action" onclick="app.openModal('send')"><i class="fas fa-arrow-up"></i><span>Отправить</span></div>
@@ -481,23 +464,7 @@
       </div>
     </div>
 
-    <!-- Вкладка "Настройки" -->
-    <div id="view-settings" style="display:none; flex:1; overflow-y:auto;">
-      <div class="vertical-section">
-        <div class="section-header">Настройки</div>
-        <div class="theme-toggle">
-          <span><i class="fas fa-moon"></i> Тёмная тема</span>
-          <label style="position:relative; width:52px; height:28px;">
-            <input type="checkbox" id="theme-switch">
-            <span style="position:absolute; inset:0; background:var(--surface-light); border-radius:34px;"></span>
-            <span style="position:absolute; height:22px; width:22px; left:3px; bottom:3px; background:white; border-radius:50%; transition:0.2s;"></span>
-          </label>
-        </div>
-        <button class="btn-primary" style="background:var(--danger); margin-top:24px;" onclick="app.deleteAccount()">Удалить аккаунт и выйти</button>
-        <button class="btn-primary" id="admin-panel-btn" style="margin-top:10px; background:var(--surface-light); display:none;" onclick="app.openModal('admin')">Админ-панель</button>
-      </div>
-    </div>
-
+    <!-- Нижняя панель -->
     <div class="bottom-nav">
       <div class="nav-link active" data-view="wallet" onclick="app.switchView('wallet')"><i class="fas fa-wallet"></i><span>Кошелёк</span></div>
       <div class="nav-link" data-view="history" onclick="app.switchView('history')"><i class="fas fa-clock-rotate-left"></i><span>История</span></div>
@@ -514,7 +481,6 @@
       <div id="modal-deposit" style="display:none;"><h2>Пополнить</h2><div class="input-group"><select id="deposit-currency-select"></select></div><div class="input-group"><input type="number" id="deposit-amount" placeholder="Сумма"></div><button class="btn-primary" id="deposit-btn" onclick="app.deposit()">Пополнить</button></div>
       <div id="modal-withdraw" style="display:none;"><h2>Вывести</h2><div class="input-group"><select id="withdraw-currency-select"></select></div><div class="input-group"><input type="number" id="withdraw-amount" placeholder="Сумма"></div><button class="btn-primary" id="withdraw-btn" onclick="app.withdraw()">Вывести</button></div>
       <div id="modal-accounts" style="display:none;"><h2>Управление кошельками</h2><div id="accounts-render"></div><button class="btn-primary" style="margin-top:20px;" onclick="app.logout()">Добавить новый аккаунт</button></div>
-      <div id="modal-admin" style="display:none;"><h2>Админ-панель</h2><select id="admin-user-select"></select><select id="admin-currency-select"></select><input type="number" id="admin-amount" placeholder="Сумма (отрицательная для списания)"><button class="btn-primary" id="admin-btn" onclick="app.adminAction()">Применить</button></div>
       <div id="modal-tx-detail" style="display:none;"><h2>Детали транзакции</h2><div id="tx-detail-content"></div></div>
     </div>
   </div>
@@ -522,7 +488,6 @@
 
 <script>
   (function(){
-    // ---------- КОНФИГУРАЦИЯ ВАЛЮТ ----------
     const COINS = [
       { id: 'usdt', name: 'Tether', symbol: 'USDT', icon: 'https://cryptologos.cc/logos/tether-usdt-logo.svg', price: 1.00, change: '-0.01%' },
       { id: 'ton', name: 'Toncoin', symbol: 'TON', icon: 'https://cryptologos.cc/logos/toncoin-ton-logo.svg', price: 1.28, change: '+3.17%' },
@@ -532,7 +497,6 @@
       { id: 'ltc', name: 'Litecoin', symbol: 'LTC', icon: 'https://cryptologos.cc/logos/litecoin-ltc-logo.svg', price: 92.40, change: '-1.05%' }
     ];
 
-    // Генерация реалистичных адресов
     function generateAddress(currency) {
       if (currency === 'ton') return 'UQA' + Array.from({length:6},()=>Math.floor(Math.random()*16).toString(16)).join('').toUpperCase();
       if (currency === 'usdt') {
@@ -545,6 +509,10 @@
       if (currency === 'ltc') return 'L' + Array.from({length:33},()=>'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[Math.floor(Math.random()*58)]).join('');
       if (currency === 'trx') return 'T' + Array.from({length:33},()=>'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[Math.floor(Math.random()*58)]).join('');
       return '0x' + Array.from({length:40},()=>Math.floor(Math.random()*16).toString(16)).join('');
+    }
+
+    function formatNumber(num) {
+      return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     class PremiumWallet {
@@ -567,7 +535,6 @@
           this.db = await this.setupDB();
           await this.loadUsers();
           await this.loadTransactions();
-          this.setupThemeToggle();
 
           const lastUser = localStorage.getItem('mindcase_last_user');
           if (lastUser) {
@@ -602,8 +569,6 @@
             document.getElementById('main-ui').style.display = 'flex';
             this.renderDashboard();
             this.populateSelects();
-            const adminBtn = document.getElementById('admin-panel-btn');
-            if (adminBtn) adminBtn.style.display = this.user.name === 'CentralCity' ? 'block' : 'none';
             this.switchView('wallet');
           }, 300);
         }
@@ -611,7 +576,7 @@
 
       setupDB() {
         return new Promise((resolve, reject) => {
-          const req = indexedDB.open('MindcaseVault', 26);
+          const req = indexedDB.open('MindcaseVault', 28);
           req.onupgradeneeded = e => {
             const db = e.target.result;
             if(!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'name' });
@@ -678,13 +643,6 @@
         });
       }
 
-      setupThemeToggle() {
-        const theme = localStorage.getItem('theme') || 'light';
-        document.body.classList.toggle('dark', theme === 'dark');
-        const toggle = document.getElementById('theme-switch');
-        if (toggle) { toggle.checked = theme === 'dark'; toggle.addEventListener('change', e => { document.body.classList.toggle('dark', e.target.checked); localStorage.setItem('theme', e.target.checked ? 'dark' : 'light'); }); }
-      }
-
       validateInput(name, pin) {
         if (!name || name.length < 3) return 'Имя должно быть не менее 3 символов';
         if (!pin || pin.length < 4) return 'ПИН-код должен быть не менее 4 символов';
@@ -723,7 +681,7 @@
         document.getElementById('copy-addr-val').value = addr;
         document.getElementById('qr-dest').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${addr}`;
         const total = this.calcTotal(this.user.balances);
-        document.getElementById('main-balance').innerText = `$${total.toFixed(2)}`;
+        document.getElementById('main-balance').innerText = `$${formatNumber(total)}`;
         document.getElementById('portfolio-change').innerHTML = `+2.72% <i class="fas fa-arrow-up" style="color:var(--success);"></i>`;
 
         const list = document.getElementById('asset-list');
@@ -737,8 +695,8 @@
           div.innerHTML = `
             <img src="${c.icon}" class="asset-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
             <div style="display:none; width:44px; height:44px; border-radius:14px; background:var(--surface-light); align-items:center; justify-content:center; font-size:20px;">${c.symbol.charAt(0)}</div>
-            <div class="asset-info"><div class="asset-name">${c.name}</div><div class="asset-price-change" style="color:${changeColor};">$${c.price.toFixed(2)} ${c.change}</div></div>
-            <div class="asset-right"><div class="asset-name">${bal.toFixed(4)} ${c.symbol}</div><div class="asset-price">$${usd.toFixed(2)}</div></div>
+            <div class="asset-info"><div class="asset-name">${c.name}</div><div class="asset-price-change" style="color:${changeColor};">$${c.price.toLocaleString()} ${c.change}</div></div>
+            <div class="asset-right"><div class="asset-name">${bal.toFixed(4)} ${c.symbol}</div><div class="asset-price">$${formatNumber(usd)}</div></div>
           `;
           list.appendChild(div);
         });
@@ -780,7 +738,7 @@
       }
 
       populateSelects() {
-        const selects = ['send-currency-select', 'deposit-currency-select', 'withdraw-currency-select', 'admin-currency-select'];
+        const selects = ['send-currency-select', 'deposit-currency-select', 'withdraw-currency-select'];
         const options = COINS.map(c => `<option value="${c.id}">${c.symbol}</option>`).join('');
         selects.forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = options; });
       }
@@ -795,17 +753,20 @@
         if(type === 'accounts') {
           document.getElementById('modal-accounts').style.display = 'block';
           const cont = document.getElementById('accounts-render');
-          cont.innerHTML = this.allUsers.map(u => `
-            <div class="account-card ${u.name === this.user.name ? 'active' : ''}" onclick="app.switchUser('${u.name}')">
-              <div class="account-avatar">${u.name.charAt(0).toUpperCase()}</div>
-              <div class="account-details"><div class="account-username">${u.name}</div><div class="account-address">${u.addresses?.ton?.slice(0,8)}...</div></div>
-              ${u.name === this.user.name ? '<div class="account-check"><i class="fas fa-check"></i></div>' : ''}
-            </div>
-          `).join('');
-        }
-        if(type === 'admin' && this.user.name === 'CentralCity') {
-          document.getElementById('modal-admin').style.display = 'block';
-          document.getElementById('admin-user-select').innerHTML = this.allUsers.filter(u => u.name !== 'CentralCity').map(u => `<option>${u.name}</option>`).join('');
+          cont.innerHTML = this.allUsers.map(u => {
+            const isActive = u.name === this.user.name;
+            return `
+              <div>
+                <div class="account-card ${isActive ? 'active' : ''}" onclick="app.switchUser('${u.name}')">
+                  <div class="account-avatar">${u.name.charAt(0).toUpperCase()}</div>
+                  <div class="account-details"><div class="account-username">${u.name}</div><div class="account-address">${u.addresses?.ton?.slice(0,8)}...</div></div>
+                  ${isActive ? '<div class="account-check"><i class="fas fa-check"></i></div>' : ''}
+                </div>
+              </div>
+            `;
+          }).join('');
+          // Кнопка выхода фиксируется после списка аккаунтов
+          cont.innerHTML += `<button class="logout-btn" onclick="app.deleteAccount()"><i class="fas fa-sign-out-alt"></i> Выйти из аккаунта</button>`;
         }
         overlay.style.display = 'flex';
       }
@@ -821,7 +782,6 @@
         this.user = u;
         localStorage.setItem('mindcase_last_user', u.name);
         this.renderDashboard();
-        document.getElementById('admin-panel-btn').style.display = u.name === 'CentralCity' ? 'block' : 'none';
         document.getElementById('main-ui').style.opacity = '1';
         this.showToast(`Переключено на ${u.name}`);
       }
@@ -858,8 +818,8 @@
         const btn = document.getElementById('send-btn');
         btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span>Отправка...';
         await new Promise(r => setTimeout(r, 800));
-        this.user.balances[curr] = Math.round((this.user.balances[curr] - amt) * 10000) / 10000;
-        recip.balances[curr] = Math.round(((recip.balances[curr]||0) + amt) * 10000) / 10000;
+        this.user.balances[curr] = Math.round((this.user.balances[curr] - amt) * 100) / 100;
+        recip.balances[curr] = Math.round(((recip.balances[curr]||0) + amt) * 100) / 100;
         const tx = { from: this.user.name, to: recip.name, currency: curr, amount: amt, description: 'Отправлено', timestamp: Date.now() };
         await this.saveTransaction(tx); await this.saveUser(this.user); await this.saveUser(recip);
         btn.disabled = false; btn.innerHTML = 'Отправить';
@@ -873,7 +833,7 @@
         const btn = document.getElementById('deposit-btn');
         btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span>Пополнение...';
         await new Promise(r => setTimeout(r, 800));
-        this.user.balances[curr] = Math.round(((this.user.balances[curr]||0) + amt) * 10000) / 10000;
+        this.user.balances[curr] = Math.round(((this.user.balances[curr]||0) + amt) * 100) / 100;
         const tx = { from: 'External', to: this.user.name, currency: curr, amount: amt, description: 'Пополнение', timestamp: Date.now() };
         await this.saveTransaction(tx); await this.saveUser(this.user);
         btn.disabled = false; btn.innerHTML = 'Пополнить';
@@ -888,30 +848,11 @@
         const btn = document.getElementById('withdraw-btn');
         btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span>Вывод...';
         await new Promise(r => setTimeout(r, 800));
-        this.user.balances[curr] = Math.round((this.user.balances[curr] - amt) * 10000) / 10000;
+        this.user.balances[curr] = Math.round((this.user.balances[curr] - amt) * 100) / 100;
         const tx = { from: this.user.name, to: 'External', currency: curr, amount: amt, description: 'Вывод', timestamp: Date.now() };
         await this.saveTransaction(tx); await this.saveUser(this.user);
         btn.disabled = false; btn.innerHTML = 'Вывести';
         this.closeModal(); this.renderDashboard(); this.showToast('Выведено');
-      }
-
-      async adminAction() {
-        if(this.user.name !== 'CentralCity') return;
-        const target = document.getElementById('admin-user-select').value;
-        const curr = document.getElementById('admin-currency-select').value;
-        const amt = parseFloat(document.getElementById('admin-amount').value);
-        if(!target||isNaN(amt)||amt===0) return;
-        const targetUser = this.allUsers.find(u => u.name === target);
-        if(!targetUser) return;
-        const btn = document.getElementById('admin-btn');
-        btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span>Применение...';
-        await new Promise(r => setTimeout(r, 600));
-        targetUser.balances[curr] = Math.round(((targetUser.balances[curr]||0) + amt) * 10000) / 10000;
-        if(targetUser.balances[curr] < 0) targetUser.balances[curr] = 0;
-        const tx = { from: amt>0?'CentralCity':target, to: amt>0?target:'CentralCity', currency: curr, amount: Math.abs(amt), description: amt>0?'Админ пополнение':'Админ списание', timestamp: Date.now() };
-        await this.saveTransaction(tx); await this.saveUser(targetUser);
-        btn.disabled = false; btn.innerHTML = 'Применить';
-        this.closeModal(); this.renderDashboard(); this.showToast('Действие выполнено');
       }
 
       copyAddress() { navigator.clipboard?.writeText(this.user.addresses?.ton || ''); this.showToast('Адрес скопирован'); }
@@ -921,7 +862,6 @@
         document.getElementById('view-history').style.display = view==='history'?'flex':'none';
         document.getElementById('view-browser').style.display = view==='browser'?'flex':'none';
         document.getElementById('view-collections').style.display = view==='collections'?'flex':'none';
-        document.getElementById('view-settings').style.display = view==='settings'?'flex':'none';
         document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.view===view));
         if(view==='history') this.renderHistoryList();
       }
@@ -930,7 +870,7 @@
 
       logout() { this.user = null; localStorage.removeItem('mindcase_last_user'); document.getElementById('main-ui').style.display = 'none'; document.getElementById('screen-auth').style.display = 'flex'; this.closeModal(); }
 
-      // Pull-to-refresh
+      // Pull-to-refresh с плавной анимацией
       touchStart(e) { if (e.touches.length === 1) this.pullStartY = e.touches[0].clientY; }
       touchMove(e) {
         if (!this.pullStartY || this.pullRefreshing) return;
@@ -941,6 +881,7 @@
           e.preventDefault();
           const indicator = document.getElementById('pull-indicator');
           indicator.style.display = 'block';
+          indicator.style.height = diff > this.pullThreshold ? '40px' : '20px';
           indicator.innerHTML = diff > this.pullThreshold ? '<i class="fas fa-arrow-up"></i> Отпустите для обновления' : '<i class="fas fa-arrow-down"></i> Потяните для обновления';
         }
       }
@@ -957,6 +898,7 @@
           this.pullRefreshing = false;
         }
         indicator.style.display = 'none';
+        indicator.style.height = '0';
         this.pullStartY = 0;
       }
     }

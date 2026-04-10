@@ -142,7 +142,7 @@
       background: var(--bg);
     }
 
-    /* Шапка с именем по центру */
+    /* Шапка */
     .header {
       padding: 16px;
       display: flex;
@@ -160,26 +160,17 @@
       border-radius: 40px;
       border: 1px solid var(--border);
     }
-    .account-center i {
-      color: var(--accent);
-      font-size: 18px;
-    }
-    .user-name {
-      font-weight: 700;
-      font-size: 18px;
-    }
+    .account-center i { color: var(--accent); font-size: 18px; }
+    .user-name { font-weight: 700; font-size: 18px; }
     .header-actions {
       position: absolute;
       right: 16px;
       display: flex;
       gap: 12px;
     }
-    .header-actions i {
-      font-size: 20px;
-      color: var(--text-dim);
-      cursor: pointer;
-    }
+    .header-actions i { font-size: 20px; color: var(--text-dim); cursor: pointer; }
 
+    /* Баланс и процент */
     .balance-row {
       display: flex;
       align-items: baseline;
@@ -252,7 +243,13 @@
     }
     .asset-right { text-align: right; }
 
-    /* Вертикальные списки */
+    /* Вертикальные списки (история, браузер, коллекции) */
+    .vertical-section {
+      padding: 16px;
+    }
+    .section-header {
+      font-size: 20px; font-weight: 700; margin-bottom: 16px;
+    }
     .vertical-list {
       display: flex;
       flex-direction: column;
@@ -298,6 +295,7 @@
     .history-positive { color: var(--success); }
     .history-negative { color: var(--danger); }
 
+    /* Настройки */
     .theme-toggle {
       display: flex;
       align-items: center;
@@ -317,20 +315,20 @@
       border: 1px solid var(--border); max-height: 80vh; overflow-y: auto;
     }
 
-    /* Нижняя панель — высота 140px */
+    /* Нижняя панель — поднята выше */
     .bottom-nav {
       height: 140px;
       background: var(--surface);
       display: flex;
       justify-content: space-around;
-      align-items: center;
-      padding-bottom: 12px;
+      align-items: flex-start;
+      padding-top: 16px;
       border-top: 1px solid var(--border);
       flex-shrink: 0;
     }
     .nav-link { color: var(--text-dim); text-align: center; cursor: pointer; }
     .nav-link.active { color: var(--accent); }
-    .nav-link i { font-size: 22px; margin-bottom: 2px; }
+    .nav-link i { font-size: 22px; margin-bottom: 4px; }
     .nav-link span { display: block; font-size: 11px; font-weight: 600; }
 
     #toast {
@@ -345,6 +343,11 @@
       display: inline-block; margin-right: 8px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Pull-to-refresh индикатор */
+    .pull-indicator {
+      text-align: center; padding: 8px; color: var(--text-dim); font-size: 13px;
+    }
 
     /* Менеджер кошельков */
     .account-card {
@@ -393,7 +396,7 @@
   </div>
   <div id="toast"></div>
 
-  <!-- Экран входа / регистрации -->
+  <!-- Экран входа -->
   <div id="screen-auth" style="display:none;">
     <div class="logo-wrapper">
       <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
@@ -422,65 +425,77 @@
 
     <!-- Вкладка "Кошелёк" -->
     <div id="view-wallet" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
-      <div class="balance-row">
-        <div class="balance-hero">
-          <div class="val" id="main-balance">$0.00</div>
+      <!-- Pull-to-refresh -->
+      <div id="pull-refresh" style="overflow-y: auto; flex:1;" ontouchstart="app.touchStart(event)" ontouchmove="app.touchMove(event)" ontouchend="app.touchEnd(event)">
+        <div id="pull-indicator" class="pull-indicator" style="display:none;"><i class="fas fa-arrow-down"></i> Потяните для обновления</div>
+        <div class="balance-row">
+          <div class="balance-hero">
+            <div class="val" id="main-balance">$0.00</div>
+          </div>
+          <div class="portfolio-change" id="portfolio-change">+2.72% <i class="fas fa-arrow-up" style="color:var(--success);"></i></div>
         </div>
-        <div class="portfolio-change" id="portfolio-change">+2.72%</div>
-      </div>
-      <div class="actions-row">
-        <div class="btn-action" onclick="app.openModal('send')"><i class="fas fa-arrow-up"></i><span>Отправить</span></div>
-        <div class="btn-action" onclick="app.openModal('receive')"><i class="fas fa-arrow-down"></i><span>Получить</span></div>
-        <div class="btn-action" onclick="app.openModal('deposit')"><i class="fas fa-plus-circle"></i><span>Пополнить</span></div>
-        <div class="btn-action" onclick="app.openModal('withdraw')"><i class="fas fa-minus-circle"></i><span>Вывести</span></div>
-      </div>
-      <div class="announcement">
-        <i class="fas fa-bolt" style="color:var(--accent);"></i>
-        <span>Мгновенные переводы, стейкинг и обмен — уже доступны</span>
-      </div>
-      <div class="assets-card">
-        <div id="asset-list"></div>
+        <div class="actions-row">
+          <div class="btn-action" onclick="app.openModal('send')"><i class="fas fa-arrow-up"></i><span>Отправить</span></div>
+          <div class="btn-action" onclick="app.openModal('receive')"><i class="fas fa-arrow-down"></i><span>Получить</span></div>
+          <div class="btn-action" onclick="app.openModal('deposit')"><i class="fas fa-plus-circle"></i><span>Пополнить</span></div>
+          <div class="btn-action" onclick="app.openModal('withdraw')"><i class="fas fa-minus-circle"></i><span>Вывести</span></div>
+        </div>
+        <div class="announcement">
+          <i class="fas fa-bolt" style="color:var(--accent);"></i>
+          <span>Мгновенные переводы, стейкинг и обмен — уже доступны</span>
+        </div>
+        <div class="assets-card">
+          <div id="asset-list"></div>
+        </div>
       </div>
     </div>
 
     <!-- Вкладка "История" -->
-    <div id="view-history" style="display:none; flex:1; padding:16px; overflow-y:auto;">
-      <h2 style="margin-bottom:16px;">История транзакций</h2>
-      <div id="history-list-container" class="vertical-list"></div>
+    <div id="view-history" style="display:none; flex:1; overflow-y:auto;">
+      <div class="vertical-section">
+        <div class="section-header">История транзакций</div>
+        <div id="history-list-container" class="vertical-list"></div>
+      </div>
     </div>
 
     <!-- Вкладка "Браузер" -->
-    <div id="view-browser" style="display:none; flex:1; padding:16px; overflow-y:auto;">
-      <h2 style="margin-bottom:16px;">DApp браузер</h2>
-      <div class="vertical-list">
-        <div class="list-item"><div class="list-icon"><i class="fas fa-chart-line"></i></div><div class="list-content"><div class="list-title">DeFi Dashboard</div><div class="list-subtitle">Аналитика и трейдинг</div></div><i class="fas fa-chevron-right" style="color:var(--text-dim);"></i></div>
-        <div class="list-item"><div class="list-icon"><i class="fas fa-coins"></i></div><div class="list-content"><div class="list-title">Staking Pools</div><div class="list-subtitle">Зарабатывайте на стейкинге</div></div><i class="fas fa-chevron-right" style="color:var(--text-dim);"></i></div>
-        <div class="list-item"><div class="list-icon"><i class="fas fa-paint-brush"></i></div><div class="list-content"><div class="list-title">NFT Marketplace</div><div class="list-subtitle">Покупайте и продавайте NFT</div></div><i class="fas fa-chevron-right" style="color:var(--text-dim);"></i></div>
+    <div id="view-browser" style="display:none; flex:1; overflow-y:auto;">
+      <div class="vertical-section">
+        <div class="section-header">DApp браузер</div>
+        <div class="vertical-list">
+          <div class="list-item"><div class="list-icon"><i class="fas fa-chart-line"></i></div><div class="list-content"><div class="list-title">DeFi Dashboard</div><div class="list-subtitle">Аналитика и трейдинг</div></div><i class="fas fa-chevron-right" style="color:var(--text-dim);"></i></div>
+          <div class="list-item"><div class="list-icon"><i class="fas fa-coins"></i></div><div class="list-content"><div class="list-title">Staking Pools</div><div class="list-subtitle">Зарабатывайте на стейкинге</div></div><i class="fas fa-chevron-right" style="color:var(--text-dim);"></i></div>
+          <div class="list-item"><div class="list-icon"><i class="fas fa-paint-brush"></i></div><div class="list-content"><div class="list-title">NFT Marketplace</div><div class="list-subtitle">Покупайте и продавайте NFT</div></div><i class="fas fa-chevron-right" style="color:var(--text-dim);"></i></div>
+        </div>
       </div>
     </div>
 
     <!-- Вкладка "Коллекции" -->
-    <div id="view-collections" style="display:none; flex:1; padding:16px; overflow-y:auto;">
-      <h2 style="margin-bottom:16px;">Коллекции NFT</h2>
-      <div class="vertical-list">
-        <div class="list-item"><div class="list-icon"><i class="fas fa-image"></i></div><div class="list-content"><div class="list-title">CryptoPunks</div><div class="list-subtitle">3 предмета</div></div><i class="fas fa-chevron-right" style="color:var(--text-dim);"></i></div>
-        <div class="list-item"><div class="list-icon"><i class="fas fa-robot"></i></div><div class="list-content"><div class="list-title">Bored Apes</div><div class="list-subtitle">1 предмет</div></div><i class="fas fa-chevron-right" style="color:var(--text-dim);"></i></div>
+    <div id="view-collections" style="display:none; flex:1; overflow-y:auto;">
+      <div class="vertical-section">
+        <div class="section-header">Коллекции NFT</div>
+        <div class="vertical-list">
+          <div class="list-item"><div class="list-icon"><i class="fas fa-image"></i></div><div class="list-content"><div class="list-title">CryptoPunks</div><div class="list-subtitle">3 предмета</div></div><i class="fas fa-chevron-right" style="color:var(--text-dim);"></i></div>
+          <div class="list-item"><div class="list-icon"><i class="fas fa-robot"></i></div><div class="list-content"><div class="list-title">Bored Apes</div><div class="list-subtitle">1 предмет</div></div><i class="fas fa-chevron-right" style="color:var(--text-dim);"></i></div>
+        </div>
       </div>
     </div>
 
     <!-- Вкладка "Настройки" -->
-    <div id="view-settings" style="display:none; flex:1; padding:16px; overflow-y:auto;">
-      <h2 style="margin-bottom:16px;">Настройки</h2>
-      <div class="theme-toggle">
-        <span><i class="fas fa-moon"></i> Тёмная тема</span>
-        <label style="position:relative; width:52px; height:28px;">
-          <input type="checkbox" id="theme-switch">
-          <span style="position:absolute; inset:0; background:var(--surface-light); border-radius:34px;"></span>
-          <span style="position:absolute; height:22px; width:22px; left:3px; bottom:3px; background:white; border-radius:50%; transition:0.2s;"></span>
-        </label>
+    <div id="view-settings" style="display:none; flex:1; overflow-y:auto;">
+      <div class="vertical-section">
+        <div class="section-header">Настройки</div>
+        <div class="theme-toggle">
+          <span><i class="fas fa-moon"></i> Тёмная тема</span>
+          <label style="position:relative; width:52px; height:28px;">
+            <input type="checkbox" id="theme-switch">
+            <span style="position:absolute; inset:0; background:var(--surface-light); border-radius:34px;"></span>
+            <span style="position:absolute; height:22px; width:22px; left:3px; bottom:3px; background:white; border-radius:50%; transition:0.2s;"></span>
+          </label>
+        </div>
+        <button class="btn-primary" style="background:var(--danger); margin-top:24px;" onclick="app.deleteAccount()">Удалить аккаунт и выйти</button>
+        <button class="btn-primary" id="admin-panel-btn" style="margin-top:10px; background:var(--surface-light); display:none;" onclick="app.openModal('admin')">Админ-панель</button>
       </div>
-      <button class="btn-primary" style="background:var(--danger); margin-top:24px;" onclick="app.deleteAccount()">Удалить аккаунт и выйти</button>
-      <button class="btn-primary" id="admin-panel-btn" style="margin-top:10px; background:var(--surface-light); display:none;" onclick="app.openModal('admin')">Админ-панель</button>
     </div>
 
     <div class="bottom-nav">
@@ -507,20 +522,35 @@
 
 <script>
   (function(){
+    // ---------- КОНФИГУРАЦИЯ ВАЛЮТ ----------
     const COINS = [
-      { id: 'ton', name: 'Toncoin', symbol: 'TON', icon: 'https://cryptologos.cc/logos/toncoin-ton-logo.svg', price: 1.28, change: '+3.17%' },
       { id: 'usdt', name: 'Tether', symbol: 'USDT', icon: 'https://cryptologos.cc/logos/tether-usdt-logo.svg', price: 1.00, change: '-0.01%' },
-      { id: 'usde', name: 'Ethena USDe', symbol: 'USDe', icon: 'https://cryptologos.cc/logos/ethena-usde-logo.svg', price: 1.00, change: '+0.02%' }
+      { id: 'ton', name: 'Toncoin', symbol: 'TON', icon: 'https://cryptologos.cc/logos/toncoin-ton-logo.svg', price: 1.28, change: '+3.17%' },
+      { id: 'btc', name: 'Bitcoin', symbol: 'BTC', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.svg', price: 72400, change: '+1.24%' },
+      { id: 'eth', name: 'Ethereum', symbol: 'ETH', icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.svg', price: 3820, change: '-0.53%' },
+      { id: 'trx', name: 'TRON', symbol: 'TRX', icon: 'https://cryptologos.cc/logos/tron-trx-logo.svg', price: 0.11, change: '+0.82%' },
+      { id: 'ltc', name: 'Litecoin', symbol: 'LTC', icon: 'https://cryptologos.cc/logos/litecoin-ltc-logo.svg', price: 92.40, change: '-1.05%' }
     ];
 
+    // Генерация реалистичных адресов
     function generateAddress(currency) {
       if (currency === 'ton') return 'UQA' + Array.from({length:6},()=>Math.floor(Math.random()*16).toString(16)).join('').toUpperCase();
-      return '0x' + Array.from({length:8},()=>Math.floor(Math.random()*16).toString(16)).join('');
+      if (currency === 'usdt') {
+        return Math.random()>0.5 ? 
+          '0x' + Array.from({length:40},()=>Math.floor(Math.random()*16).toString(16)).join('') :
+          'T' + Array.from({length:33},()=>'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[Math.floor(Math.random()*58)]).join('');
+      }
+      if (currency === 'eth') return '0x' + Array.from({length:40},()=>Math.floor(Math.random()*16).toString(16)).join('');
+      if (currency === 'btc') return 'bc1' + Array.from({length:38},()=>'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[Math.floor(Math.random()*58)]).join('');
+      if (currency === 'ltc') return 'L' + Array.from({length:33},()=>'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[Math.floor(Math.random()*58)]).join('');
+      if (currency === 'trx') return 'T' + Array.from({length:33},()=>'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[Math.floor(Math.random()*58)]).join('');
+      return '0x' + Array.from({length:40},()=>Math.floor(Math.random()*16).toString(16)).join('');
     }
 
     class PremiumWallet {
       constructor() {
         this.db = null; this.user = null; this.allUsers = []; this.transactions = [];
+        this.pullStartY = 0; this.pullThreshold = 80; this.pullRefreshing = false;
         this.init();
       }
 
@@ -557,8 +587,7 @@
           splash.style.opacity = '0';
           setTimeout(() => {
             if (splash) splash.style.display = 'none';
-            const authScreen = document.getElementById('screen-auth');
-            if (authScreen) authScreen.style.display = 'flex';
+            document.getElementById('screen-auth').style.display = 'flex';
           }, 300);
         }
       }
@@ -569,10 +598,8 @@
           splash.style.opacity = '0';
           setTimeout(() => {
             if (splash) splash.style.display = 'none';
-            const authScreen = document.getElementById('screen-auth');
-            const mainUI = document.getElementById('main-ui');
-            if (authScreen) authScreen.style.display = 'none';
-            if (mainUI) mainUI.style.display = 'flex';
+            document.getElementById('screen-auth').style.display = 'none';
+            document.getElementById('main-ui').style.display = 'flex';
             this.renderDashboard();
             this.populateSelects();
             const adminBtn = document.getElementById('admin-panel-btn');
@@ -584,7 +611,7 @@
 
       setupDB() {
         return new Promise((resolve, reject) => {
-          const req = indexedDB.open('MindcaseVault', 25);
+          const req = indexedDB.open('MindcaseVault', 26);
           req.onupgradeneeded = e => {
             const db = e.target.result;
             if(!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'name' });
@@ -605,9 +632,10 @@
             if (this.allUsers.length === 0) {
               const demo = {
                 name: 'demo', pin: '1234',
-                balances: { ton: 100, usdt: 500, usde: 200 },
-                addresses: { ton: generateAddress('ton'), usdt: generateAddress('usdt'), usde: generateAddress('usde') }
+                balances: { usdt: 500, ton: 100, btc: 0.1, eth: 1.5, trx: 1000, ltc: 2 },
+                addresses: {}
               };
+              COINS.forEach(c => demo.addresses[c.id] = generateAddress(c.id));
               this.allUsers.push(demo);
               await this.saveUser(demo);
             }
@@ -635,8 +663,7 @@
       async saveUser(user) {
         return new Promise((resolve, reject) => {
           const tx = this.db.transaction('users', 'readwrite');
-          const store = tx.objectStore('users');
-          const req = store.put(user);
+          const req = tx.objectStore('users').put(user);
           req.onsuccess = () => resolve();
           req.onerror = e => reject(e.target.error);
         });
@@ -645,8 +672,7 @@
       async saveTransaction(tx) {
         return new Promise((resolve, reject) => {
           const trans = this.db.transaction('transactions', 'readwrite');
-          const store = trans.objectStore('transactions');
-          const req = store.add(tx);
+          const req = trans.objectStore('transactions').add(tx);
           req.onsuccess = () => { this.transactions.push(tx); resolve(); };
           req.onerror = e => reject(e.target.error);
         });
@@ -680,7 +706,8 @@
           if (existing.pin !== pin) { btn.disabled = false; btn.innerHTML = 'Войти / Создать'; err.textContent = 'Неверный ПИН-код'; return; }
           this.user = existing;
         } else {
-          const newUser = { name, pin, balances: { ton: 0, usdt: 0, usde: 0 }, addresses: { ton: generateAddress('ton'), usdt: generateAddress('usdt'), usde: generateAddress('usde') } };
+          const newUser = { name, pin, balances: {}, addresses: {} };
+          COINS.forEach(c => { newUser.balances[c.id] = 0; newUser.addresses[c.id] = generateAddress(c.id); });
           this.allUsers.push(newUser);
           await this.saveUser(newUser);
           this.user = newUser;
@@ -697,7 +724,6 @@
         document.getElementById('qr-dest').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${addr}`;
         const total = this.calcTotal(this.user.balances);
         document.getElementById('main-balance').innerText = `$${total.toFixed(2)}`;
-        // фиксированный процент
         document.getElementById('portfolio-change').innerHTML = `+2.72% <i class="fas fa-arrow-up" style="color:var(--success);"></i>`;
 
         const list = document.getElementById('asset-list');
@@ -712,7 +738,7 @@
             <img src="${c.icon}" class="asset-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
             <div style="display:none; width:44px; height:44px; border-radius:14px; background:var(--surface-light); align-items:center; justify-content:center; font-size:20px;">${c.symbol.charAt(0)}</div>
             <div class="asset-info"><div class="asset-name">${c.name}</div><div class="asset-price-change" style="color:${changeColor};">$${c.price.toFixed(2)} ${c.change}</div></div>
-            <div class="asset-right"><div class="asset-name">${bal.toFixed(2)} ${c.symbol}</div><div class="asset-price">$${usd.toFixed(2)}</div></div>
+            <div class="asset-right"><div class="asset-name">${bal.toFixed(4)} ${c.symbol}</div><div class="asset-price">$${usd.toFixed(2)}</div></div>
           `;
           list.appendChild(div);
         });
@@ -728,7 +754,7 @@
           return `<div class="history-item" onclick="app.showTxDetail(${tx.id})">
             <div class="history-icon"><i class="fas fa-${incoming?'arrow-down':'arrow-up'}"></i></div>
             <div style="flex:1;"><div>${tx.description}</div><small>${new Date(tx.timestamp).toLocaleString()}</small></div>
-            <div class="${incoming?'history-positive':'history-negative'}">${incoming?'+':'-'}${tx.amount.toFixed(2)} ${tx.currency.toUpperCase()}</div>
+            <div class="${incoming?'history-positive':'history-negative'}">${incoming?'+':'-'}${tx.amount.toFixed(4)} ${tx.currency.toUpperCase()}</div>
           </div>`;
         }).join('') || '<p style="color:var(--text-dim); text-align:center;">Нет транзакций</p>';
       }
@@ -742,7 +768,7 @@
             <div style="font-weight:700; font-size:18px; margin-bottom:8px;">${tx.description}</div>
             <div style="color:var(--text-dim); margin-bottom:16px;">${new Date(tx.timestamp).toLocaleString()}</div>
             <div style="background:var(--surface-light); padding:16px; border-radius:16px;">
-              <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>Сумма:</span><span style="font-weight:700; color:${incoming?'var(--success)':'var(--danger)'};">${incoming?'+':'-'}${tx.amount.toFixed(2)} ${tx.currency.toUpperCase()}</span></div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>Сумма:</span><span style="font-weight:700; color:${incoming?'var(--success)':'var(--danger)'};">${incoming?'+':'-'}${tx.amount.toFixed(4)} ${tx.currency.toUpperCase()}</span></div>
               <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span>Отправитель:</span><span>${tx.from}</span></div>
               <div style="display:flex; justify-content:space-between;"><span>Получатель:</span><span>${tx.to}</span></div>
             </div>
@@ -832,8 +858,8 @@
         const btn = document.getElementById('send-btn');
         btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span>Отправка...';
         await new Promise(r => setTimeout(r, 800));
-        this.user.balances[curr] = Math.round((this.user.balances[curr] - amt) * 100) / 100;
-        recip.balances[curr] = Math.round(((recip.balances[curr]||0) + amt) * 100) / 100;
+        this.user.balances[curr] = Math.round((this.user.balances[curr] - amt) * 10000) / 10000;
+        recip.balances[curr] = Math.round(((recip.balances[curr]||0) + amt) * 10000) / 10000;
         const tx = { from: this.user.name, to: recip.name, currency: curr, amount: amt, description: 'Отправлено', timestamp: Date.now() };
         await this.saveTransaction(tx); await this.saveUser(this.user); await this.saveUser(recip);
         btn.disabled = false; btn.innerHTML = 'Отправить';
@@ -847,7 +873,7 @@
         const btn = document.getElementById('deposit-btn');
         btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span>Пополнение...';
         await new Promise(r => setTimeout(r, 800));
-        this.user.balances[curr] = Math.round(((this.user.balances[curr]||0) + amt) * 100) / 100;
+        this.user.balances[curr] = Math.round(((this.user.balances[curr]||0) + amt) * 10000) / 10000;
         const tx = { from: 'External', to: this.user.name, currency: curr, amount: amt, description: 'Пополнение', timestamp: Date.now() };
         await this.saveTransaction(tx); await this.saveUser(this.user);
         btn.disabled = false; btn.innerHTML = 'Пополнить';
@@ -862,7 +888,7 @@
         const btn = document.getElementById('withdraw-btn');
         btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span>Вывод...';
         await new Promise(r => setTimeout(r, 800));
-        this.user.balances[curr] = Math.round((this.user.balances[curr] - amt) * 100) / 100;
+        this.user.balances[curr] = Math.round((this.user.balances[curr] - amt) * 10000) / 10000;
         const tx = { from: this.user.name, to: 'External', currency: curr, amount: amt, description: 'Вывод', timestamp: Date.now() };
         await this.saveTransaction(tx); await this.saveUser(this.user);
         btn.disabled = false; btn.innerHTML = 'Вывести';
@@ -880,7 +906,7 @@
         const btn = document.getElementById('admin-btn');
         btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span>Применение...';
         await new Promise(r => setTimeout(r, 600));
-        targetUser.balances[curr] = Math.round(((targetUser.balances[curr]||0) + amt) * 100) / 100;
+        targetUser.balances[curr] = Math.round(((targetUser.balances[curr]||0) + amt) * 10000) / 10000;
         if(targetUser.balances[curr] < 0) targetUser.balances[curr] = 0;
         const tx = { from: amt>0?'CentralCity':target, to: amt>0?target:'CentralCity', currency: curr, amount: Math.abs(amt), description: amt>0?'Админ пополнение':'Админ списание', timestamp: Date.now() };
         await this.saveTransaction(tx); await this.saveUser(targetUser);
@@ -903,6 +929,36 @@
       showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2000); }
 
       logout() { this.user = null; localStorage.removeItem('mindcase_last_user'); document.getElementById('main-ui').style.display = 'none'; document.getElementById('screen-auth').style.display = 'flex'; this.closeModal(); }
+
+      // Pull-to-refresh
+      touchStart(e) { if (e.touches.length === 1) this.pullStartY = e.touches[0].clientY; }
+      touchMove(e) {
+        if (!this.pullStartY || this.pullRefreshing) return;
+        const y = e.touches[0].clientY;
+        const diff = y - this.pullStartY;
+        const container = document.getElementById('pull-refresh');
+        if (container.scrollTop === 0 && diff > 20) {
+          e.preventDefault();
+          const indicator = document.getElementById('pull-indicator');
+          indicator.style.display = 'block';
+          indicator.innerHTML = diff > this.pullThreshold ? '<i class="fas fa-arrow-up"></i> Отпустите для обновления' : '<i class="fas fa-arrow-down"></i> Потяните для обновления';
+        }
+      }
+      async touchEnd(e) {
+        if (!this.pullStartY || this.pullRefreshing) return;
+        const diff = e.changedTouches[0].clientY - this.pullStartY;
+        const container = document.getElementById('pull-refresh');
+        const indicator = document.getElementById('pull-indicator');
+        if (container.scrollTop === 0 && diff > this.pullThreshold) {
+          this.pullRefreshing = true;
+          indicator.innerHTML = '<span class="loading-spinner"></span> Обновление...';
+          await new Promise(r => setTimeout(r, 800));
+          this.renderDashboard();
+          this.pullRefreshing = false;
+        }
+        indicator.style.display = 'none';
+        this.pullStartY = 0;
+      }
     }
 
     window.app = new PremiumWallet();

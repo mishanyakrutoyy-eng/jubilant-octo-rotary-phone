@@ -574,7 +574,7 @@
         this.pullStartY = 0; this.pullThreshold = 80; this.pullRefreshing = false;
         this.previousTotal = 0;
         this.displayCurrency = 'usd';
-        this.rubRate = 90; // будет обновлён через API
+        this.rubRate = 90;
         this.init();
       }
 
@@ -591,7 +591,7 @@
           this.db = await this.setupDB();
           await this.loadUsers();
           await this.loadTransactions();
-          await this.fetchRubRate(); // реальный курс USD/RUB
+          await this.fetchRubRate();
           await this.fetchRates();
           this.startRateUpdates();
           this.setupCurrencyToggle();
@@ -679,7 +679,7 @@
 
       setupDB() {
         return new Promise((resolve, reject) => {
-          const req = indexedDB.open('MindcaseVault', 37);
+          const req = indexedDB.open('MindcaseVault', 38);
           req.onupgradeneeded = e => {
             const db = e.target.result;
             if(!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'name' });

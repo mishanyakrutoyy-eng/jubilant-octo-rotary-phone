@@ -557,6 +557,7 @@
       { id: 'ltc', name: 'Litecoin', symbol: 'LTC', icon: 'https://cryptologos.cc/logos/litecoin-ltc-logo.svg', price: 92.40, change24h: -1.05, coingeckoId: 'litecoin' }
     ];
 
+    // Генерация адресов, начинающихся с MC
     function generateAddress() {
       const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
       return 'MC' + Array.from({length: 30}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
@@ -573,7 +574,7 @@
         this.pullStartY = 0; this.pullThreshold = 80; this.pullRefreshing = false;
         this.previousTotal = 0;
         this.displayCurrency = 'usd';
-        this.rubRate = 90;
+        this.rubRate = 90; // будет обновлён через API
         this.init();
       }
 
@@ -590,6 +591,7 @@
           this.db = await this.setupDB();
           await this.loadUsers();
           await this.loadTransactions();
+          await this.fetchRubRate(); // реальный курс USD/RUB
           await this.fetchRates();
           this.startRateUpdates();
           this.setupCurrencyToggle();
@@ -603,6 +605,16 @@
         } catch (e) {
           console.error(e);
           this.showAuthScreen();
+        }
+      }
+
+      async fetchRubRate() {
+        try {
+          const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+          const data = await res.json();
+          this.rubRate = data.rates.RUB;
+        } catch (e) {
+          console.warn('Курс USD/RUB не обновлён, используется 90');
         }
       }
 
@@ -624,7 +636,7 @@
       }
 
       startRateUpdates() {
-        setInterval(() => this.fetchRates(), 60000);
+        setInterval(() => { this.fetchRubRate(); this.fetchRates(); }, 60000);
       }
 
       setupCurrencyToggle() {
@@ -667,7 +679,7 @@
 
       setupDB() {
         return new Promise((resolve, reject) => {
-          const req = indexedDB.open('MindcaseVault', 36);
+          const req = indexedDB.open('MindcaseVault', 37);
           req.onupgradeneeded = e => {
             const db = e.target.result;
             if(!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'name' });
@@ -1024,6 +1036,7 @@
         if (container.scrollTop === 0 && diff > this.pullThreshold) {
           this.pullRefreshing = true;
           indicator.innerHTML = '<span class="loading-spinner"></span> Обновление...';
+          await this.fetchRubRate();
           await this.fetchRates();
           await new Promise(r => setTimeout(r, 800));
           this.renderDashboard();

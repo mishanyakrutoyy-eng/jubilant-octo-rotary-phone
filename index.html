@@ -488,32 +488,37 @@
 
 <script>
   (function(){
-    // ---------- КОНФИГУРАЦИЯ ВАЛЮТ ----------
     const COINS = [
-      { id: 'usdt', name: 'Tether', symbol: 'USDT', icon: 'https://cryptologos.cc/logos/tether-usdt-logo.svg', price: 1.00, change: '-0.01%', coingeckoId: 'tether' },
-      { id: 'ton', name: 'Toncoin', symbol: 'TON', icon: 'https://cryptologos.cc/logos/toncoin-ton-logo.svg', price: 1.28, change: '+3.17%', coingeckoId: 'the-open-network' },
-      { id: 'btc', name: 'Bitcoin', symbol: 'BTC', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.svg', price: 72400, change: '+1.24%', coingeckoId: 'bitcoin' },
-      { id: 'eth', name: 'Ethereum', symbol: 'ETH', icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.svg', price: 3820, change: '-0.53%', coingeckoId: 'ethereum' },
-      { id: 'trx', name: 'TRON', symbol: 'TRX', icon: 'https://cryptologos.cc/logos/tron-trx-logo.svg', price: 0.11, change: '+0.82%', coingeckoId: 'tron' },
-      { id: 'ltc', name: 'Litecoin', symbol: 'LTC', icon: 'https://cryptologos.cc/logos/litecoin-ltc-logo.svg', price: 92.40, change: '-1.05%', coingeckoId: 'litecoin' }
+      { id: 'usdt', name: 'Tether', symbol: 'USDT', icon: 'https://cryptologos.cc/logos/tether-usdt-logo.svg', price: 1.00, change: '-0.01%' },
+      { id: 'ton', name: 'Toncoin', symbol: 'TON', icon: 'https://cryptologos.cc/logos/toncoin-ton-logo.svg', price: 1.28, change: '+3.17%' },
+      { id: 'btc', name: 'Bitcoin', symbol: 'BTC', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.svg', price: 72400, change: '+1.24%' },
+      { id: 'eth', name: 'Ethereum', symbol: 'ETH', icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.svg', price: 3820, change: '-0.53%' },
+      { id: 'trx', name: 'TRON', symbol: 'TRX', icon: 'https://cryptologos.cc/logos/tron-trx-logo.svg', price: 0.11, change: '+0.82%' },
+      { id: 'ltc', name: 'Litecoin', symbol: 'LTC', icon: 'https://cryptologos.cc/logos/litecoin-ltc-logo.svg', price: 92.40, change: '-1.05%' }
     ];
 
-    // Генерация адресов, начинающихся с MC
-    function generateAddress() {
-      const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-      return 'MC' + Array.from({length: 30}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    function generateAddress(currency) {
+      if (currency === 'ton') return 'UQA' + Array.from({length:6},()=>Math.floor(Math.random()*16).toString(16)).join('').toUpperCase();
+      if (currency === 'usdt') {
+        return Math.random()>0.5 ? 
+          '0x' + Array.from({length:40},()=>Math.floor(Math.random()*16).toString(16)).join('') :
+          'T' + Array.from({length:33},()=>'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[Math.floor(Math.random()*58)]).join('');
+      }
+      if (currency === 'eth') return '0x' + Array.from({length:40},()=>Math.floor(Math.random()*16).toString(16)).join('');
+      if (currency === 'btc') return 'bc1' + Array.from({length:38},()=>'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[Math.floor(Math.random()*58)]).join('');
+      if (currency === 'ltc') return 'L' + Array.from({length:33},()=>'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[Math.floor(Math.random()*58)]).join('');
+      if (currency === 'trx') return 'T' + Array.from({length:33},()=>'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[Math.floor(Math.random()*58)]).join('');
+      return '0x' + Array.from({length:40},()=>Math.floor(Math.random()*16).toString(16)).join('');
     }
 
-    // Форматирование чисел (без пробелов)
-    function formatNumber(num, decimals = 2) {
-      return num.toFixed(decimals);
+    function formatNumber(num) {
+      return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     class PremiumWallet {
       constructor() {
         this.db = null; this.user = null; this.allUsers = []; this.transactions = [];
         this.pullStartY = 0; this.pullThreshold = 80; this.pullRefreshing = false;
-        this.rates = {};
         this.init();
       }
 
@@ -530,8 +535,6 @@
           this.db = await this.setupDB();
           await this.loadUsers();
           await this.loadTransactions();
-          await this.fetchRates(); // Первичная загрузка курсов
-          this.startRateUpdates(); // Автообновление
 
           const lastUser = localStorage.getItem('mindcase_last_user');
           if (lastUser) {
@@ -543,29 +546,6 @@
           console.error(e);
           this.showAuthScreen();
         }
-      }
-
-      async fetchRates() {
-        try {
-          const ids = COINS.map(c => c.coingeckoId).join(',');
-          const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`);
-          const data = await response.json();
-          COINS.forEach(c => {
-            if (data[c.coingeckoId]) {
-              c.price = data[c.coingeckoId].usd;
-            }
-          });
-          // USDT всегда ~1
-          const usdt = COINS.find(c => c.id === 'usdt');
-          if (usdt) usdt.price = 1.00;
-          if (this.user) this.renderDashboard();
-        } catch (e) {
-          console.warn('Не удалось обновить курсы');
-        }
-      }
-
-      startRateUpdates() {
-        setInterval(() => this.fetchRates(), 60000); // каждые 60 секунд
       }
 
       showAuthScreen() {
@@ -596,7 +576,7 @@
 
       setupDB() {
         return new Promise((resolve, reject) => {
-          const req = indexedDB.open('MindcaseVault', 31);
+          const req = indexedDB.open('MindcaseVault', 28);
           req.onupgradeneeded = e => {
             const db = e.target.result;
             if(!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'name' });
@@ -620,7 +600,7 @@
                 balances: { usdt: 500, ton: 100, btc: 0.1, eth: 1.5, trx: 1000, ltc: 2 },
                 addresses: {}
               };
-              COINS.forEach(c => demo.addresses[c.id] = generateAddress());
+              COINS.forEach(c => demo.addresses[c.id] = generateAddress(c.id));
               this.allUsers.push(demo);
               await this.saveUser(demo);
             }
@@ -685,7 +665,7 @@
           this.user = existing;
         } else {
           const newUser = { name, pin, balances: {}, addresses: {} };
-          COINS.forEach(c => { newUser.balances[c.id] = 0; newUser.addresses[c.id] = generateAddress(); });
+          COINS.forEach(c => { newUser.balances[c.id] = 0; newUser.addresses[c.id] = generateAddress(c.id); });
           this.allUsers.push(newUser);
           await this.saveUser(newUser);
           this.user = newUser;
@@ -697,7 +677,7 @@
 
       renderDashboard() {
         document.getElementById('active-user-display').innerText = this.user.name;
-        const addr = this.user.addresses?.ton || generateAddress();
+        const addr = this.user.addresses?.ton || generateAddress('ton');
         document.getElementById('copy-addr-val').value = addr;
         document.getElementById('qr-dest').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${addr}`;
         const total = this.calcTotal(this.user.balances);
@@ -715,7 +695,7 @@
           div.innerHTML = `
             <img src="${c.icon}" class="asset-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
             <div style="display:none; width:44px; height:44px; border-radius:14px; background:var(--surface-light); align-items:center; justify-content:center; font-size:20px;">${c.symbol.charAt(0)}</div>
-            <div class="asset-info"><div class="asset-name">${c.name}</div><div class="asset-price-change" style="color:${changeColor};">$${c.price.toFixed(2)} ${c.change}</div></div>
+            <div class="asset-info"><div class="asset-name">${c.name}</div><div class="asset-price-change" style="color:${changeColor};">$${c.price.toLocaleString()} ${c.change}</div></div>
             <div class="asset-right"><div class="asset-name">${bal.toFixed(4)} ${c.symbol}</div><div class="asset-price">$${formatNumber(usd)}</div></div>
           `;
           list.appendChild(div);
@@ -785,6 +765,7 @@
               </div>
             `;
           }).join('');
+          // Кнопка выхода фиксируется после списка аккаунтов
           cont.innerHTML += `<button class="logout-btn" onclick="app.deleteAccount()"><i class="fas fa-sign-out-alt"></i> Выйти из аккаунта</button>`;
         }
         overlay.style.display = 'flex';
@@ -837,8 +818,8 @@
         const btn = document.getElementById('send-btn');
         btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span>Отправка...';
         await new Promise(r => setTimeout(r, 800));
-        this.user.balances[curr] = Math.round((this.user.balances[curr] - amt) * 10000) / 10000;
-        recip.balances[curr] = Math.round(((recip.balances[curr]||0) + amt) * 10000) / 10000;
+        this.user.balances[curr] = Math.round((this.user.balances[curr] - amt) * 100) / 100;
+        recip.balances[curr] = Math.round(((recip.balances[curr]||0) + amt) * 100) / 100;
         const tx = { from: this.user.name, to: recip.name, currency: curr, amount: amt, description: 'Отправлено', timestamp: Date.now() };
         await this.saveTransaction(tx); await this.saveUser(this.user); await this.saveUser(recip);
         btn.disabled = false; btn.innerHTML = 'Отправить';
@@ -852,7 +833,7 @@
         const btn = document.getElementById('deposit-btn');
         btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span>Пополнение...';
         await new Promise(r => setTimeout(r, 800));
-        this.user.balances[curr] = Math.round(((this.user.balances[curr]||0) + amt) * 10000) / 10000;
+        this.user.balances[curr] = Math.round(((this.user.balances[curr]||0) + amt) * 100) / 100;
         const tx = { from: 'External', to: this.user.name, currency: curr, amount: amt, description: 'Пополнение', timestamp: Date.now() };
         await this.saveTransaction(tx); await this.saveUser(this.user);
         btn.disabled = false; btn.innerHTML = 'Пополнить';
@@ -867,7 +848,7 @@
         const btn = document.getElementById('withdraw-btn');
         btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span>Вывод...';
         await new Promise(r => setTimeout(r, 800));
-        this.user.balances[curr] = Math.round((this.user.balances[curr] - amt) * 10000) / 10000;
+        this.user.balances[curr] = Math.round((this.user.balances[curr] - amt) * 100) / 100;
         const tx = { from: this.user.name, to: 'External', currency: curr, amount: amt, description: 'Вывод', timestamp: Date.now() };
         await this.saveTransaction(tx); await this.saveUser(this.user);
         btn.disabled = false; btn.innerHTML = 'Вывести';
@@ -889,7 +870,7 @@
 
       logout() { this.user = null; localStorage.removeItem('mindcase_last_user'); document.getElementById('main-ui').style.display = 'none'; document.getElementById('screen-auth').style.display = 'flex'; this.closeModal(); }
 
-      // Pull-to-refresh
+      // Pull-to-refresh с плавной анимацией
       touchStart(e) { if (e.touches.length === 1) this.pullStartY = e.touches[0].clientY; }
       touchMove(e) {
         if (!this.pullStartY || this.pullRefreshing) return;
@@ -912,7 +893,6 @@
         if (container.scrollTop === 0 && diff > this.pullThreshold) {
           this.pullRefreshing = true;
           indicator.innerHTML = '<span class="loading-spinner"></span> Обновление...';
-          await this.fetchRates(); // Обновляем курсы
           await new Promise(r => setTimeout(r, 800));
           this.renderDashboard();
           this.pullRefreshing = false;

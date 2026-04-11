@@ -561,10 +561,10 @@
           });
           const usdt = COINS.find(c => c.id === 'usdt');
           if (usdt) usdt.price = 1.00;
-          if (this.user) this.renderDashboard();
         } catch (e) {
-          console.warn('Не удалось обновить курсы');
+          console.warn('Не удалось обновить курсы, используются предыдущие значения');
         }
+        if (this.user) this.renderDashboard();
       }
 
       startRateUpdates() {
@@ -599,7 +599,7 @@
 
       setupDB() {
         return new Promise((resolve, reject) => {
-          const req = indexedDB.open('MindcaseVault', 33);
+          const req = indexedDB.open('MindcaseVault', 34);
           req.onupgradeneeded = e => {
             const db = e.target.result;
             if(!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'name' });

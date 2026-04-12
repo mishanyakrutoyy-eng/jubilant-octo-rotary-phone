@@ -6,7 +6,8 @@
   <title>Mindcase · Premium Crypto Wallet</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- TradingView Widget -->
+  <script src="https://s3.tradingview.com/tv.js"></script>
   <style>
     :root {
       --bg: #F5F7FA;
@@ -18,6 +19,7 @@
       --text-dim: #64748B;
       --success: #25D366;
       --danger: #FF3B30;
+      --warning: #FF9500;
       --border: rgba(0, 0, 0, 0.05);
       --transition: all 0.2s ease;
     }
@@ -314,6 +316,36 @@
     .history-positive { color: var(--success); }
     .history-negative { color: var(--danger); }
 
+    /* P2P */
+    .p2p-coin-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .p2p-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .p2p-coin-img {
+      width: 36px; height: 36px; border-radius: 12px; object-fit: contain; background: var(--surface-light);
+    }
+    .p2p-coin-name { font-weight: 700; font-size: 16px; }
+    .p2p-coin-balance { font-size: 14px; color: var(--text-dim); }
+    .p2p-price {
+      font-size: 24px; font-weight: 700; margin: 8px 0;
+    }
+    .p2p-input {
+      width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--surface-light); font-size: 16px; margin: 8px 0;
+    }
+    .p2p-actions {
+      display: flex; gap: 8px; margin-top: 12px;
+    }
+
     /* Детали монеты */
     .coin-detail-header {
       display: flex;
@@ -425,6 +457,12 @@
       transition: var(--transition);
     }
     .logout-btn:active { background: var(--danger); color: white; }
+
+    /* TradingView график */
+    .tv-chart-container {
+      height: 200px;
+      margin: 16px 0;
+    }
   </style>
 </head>
 <body>
@@ -484,7 +522,7 @@
         </div>
         <div class="announcement">
           <i class="fas fa-bolt" style="color:var(--accent);"></i>
-          <span>Мгновенные переводы, стейкинг и обмен — уже доступны</span>
+          <span>Мгновенные переводы, стейкинг и P2P — уже доступны</span>
         </div>
         <div class="assets-card">
           <div id="asset-list"></div>
@@ -500,16 +538,11 @@
       </div>
     </div>
 
-    <!-- Вкладка "Браузер" -->
-    <div id="view-browser" style="display:none; flex:1; overflow-y:auto;">
-      <div class="vertical-section">
-        <div class="section-header">DApp браузер</div>
-        <div class="vertical-list">
-          <div class="list-item"><div class="list-icon"><i class="fas fa-chart-line"></i></div><div class="list-content"><div class="list-title">DeFi Dashboard</div><div class="list-subtitle">Аналитика и трейдинг</div></div><i class="fas fa-chevron-right" style="color:var(--text-dim);"></i></div>
-          <div class="list-item"><div class="list-icon"><i class="fas fa-coins"></i></div><div class="list-content"><div class="list-title">Staking Pools</div><div class="list-subtitle">Зарабатывайте на стейкинге</div></div><i class="fas fa-chevron-right" style="color:var(--text-dim);"></i></div>
-          <div class="list-item"><div class="list-icon"><i class="fas fa-paint-brush"></i></div><div class="list-content"><div class="list-title">NFT Marketplace</div><div class="list-subtitle">Покупайте и продавайте NFT</div></div><i class="fas fa-chevron-right" style="color:var(--text-dim);"></i></div>
-        </div>
-      </div>
+    <!-- Вкладка "P2P" -->
+    <div id="view-p2p" style="display:none; flex:1; overflow-y:auto; padding:16px;">
+      <h2 style="text-align:center; margin-bottom:16px;">P2P Торговля</h2>
+      <p style="text-align:center; color:var(--text-dim); margin-bottom:20px;">Продайте криптовалюту напрямую на карту</p>
+      <div id="p2p-container"></div>
     </div>
 
     <!-- Вкладка "Коллекции" -->
@@ -527,7 +560,7 @@
     <div class="bottom-nav">
       <div class="nav-link active" data-view="wallet" onclick="app.switchView('wallet')"><i class="fas fa-wallet"></i><span>Кошелёк</span></div>
       <div class="nav-link" data-view="history" onclick="app.switchView('history')"><i class="fas fa-clock-rotate-left"></i><span>История</span></div>
-      <div class="nav-link" data-view="browser" onclick="app.switchView('browser')"><i class="fas fa-globe"></i><span>Браузер</span></div>
+      <div class="nav-link" data-view="p2p" onclick="app.switchView('p2p')"><i class="fas fa-handshake"></i><span>P2P</span></div>
       <div class="nav-link" data-view="collections" onclick="app.switchView('collections')"><i class="fas fa-images"></i><span>Коллекции</span></div>
     </div>
   </div>
@@ -542,6 +575,7 @@
       <div id="modal-accounts" style="display:none;"><h2>Управление кошельками</h2><div id="accounts-render"></div><button class="btn-primary" style="margin-top:20px;" onclick="app.logout()">Добавить новый аккаунт</button></div>
       <div id="modal-tx-detail" style="display:none;"><h2>Детали транзакции</h2><div id="tx-detail-content"></div></div>
       <div id="modal-coin-detail" style="display:none;"><div id="coin-detail-content"></div></div>
+      <div id="modal-p2p-sell" style="display:none;"><h2>Продажа</h2><div id="p2p-sell-content"></div></div>
     </div>
   </div>
 </div>
@@ -549,21 +583,19 @@
 <script>
   (function(){
     const COINS = [
-      { id: 'usdt', name: 'Tether', symbol: 'USDT', icon: 'https://cryptologos.cc/logos/tether-usdt-logo.svg', price: 1.00, change24h: 0.01, coingeckoId: 'tether' },
-      { id: 'ton', name: 'Toncoin', symbol: 'TON', icon: 'https://cryptologos.cc/logos/toncoin-ton-logo.svg', price: 1.28, change24h: 3.17, coingeckoId: 'the-open-network' },
-      { id: 'btc', name: 'Bitcoin', symbol: 'BTC', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.svg', price: 72400, change24h: 1.24, coingeckoId: 'bitcoin' },
-      { id: 'eth', name: 'Ethereum', symbol: 'ETH', icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.svg', price: 3820, change24h: -0.53, coingeckoId: 'ethereum' },
-      { id: 'trx', name: 'TRON', symbol: 'TRX', icon: 'https://cryptologos.cc/logos/tron-trx-logo.svg', price: 0.11, change24h: 0.82, coingeckoId: 'tron' },
-      { id: 'ltc', name: 'Litecoin', symbol: 'LTC', icon: 'https://cryptologos.cc/logos/litecoin-ltc-logo.svg', price: 92.40, change24h: -1.05, coingeckoId: 'litecoin' }
+      { id: 'usdt', name: 'Tether', symbol: 'USDT', icon: 'https://assets.coingecko.com/coins/images/325/large/Tether.png', price: 1.00, change24h: 0.01, coingeckoId: 'tether' },
+      { id: 'ton', name: 'Toncoin', symbol: 'TON', icon: 'https://assets.coingecko.com/coins/images/17980/large/ton_symbol.png', price: 1.28, change24h: 3.17, coingeckoId: 'the-open-network' },
+      { id: 'btc', name: 'Bitcoin', symbol: 'BTC', icon: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png', price: 72400, change24h: 1.24, coingeckoId: 'bitcoin' },
+      { id: 'eth', name: 'Ethereum', symbol: 'ETH', icon: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png', price: 3820, change24h: -0.53, coingeckoId: 'ethereum' },
+      { id: 'trx', name: 'TRON', symbol: 'TRX', icon: 'https://assets.coingecko.com/coins/images/1094/large/tron-logo.png', price: 0.11, change24h: 0.82, coingeckoId: 'tron' },
+      { id: 'ltc', name: 'Litecoin', symbol: 'LTC', icon: 'https://assets.coingecko.com/coins/images/2/large/litecoin.png', price: 92.40, change24h: -1.05, coingeckoId: 'litecoin' }
     ];
 
-    // Генерация адресов, начинающихся с MC
     function generateAddress() {
       const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
       return 'MC' + Array.from({length: 30}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
     }
 
-    // Форматирование с разделителями тысяч
     function formatNumber(num, decimals = 2) {
       return num.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
@@ -575,6 +607,7 @@
         this.previousTotal = 0;
         this.displayCurrency = 'usd';
         this.rubRate = 90;
+        this.p2pOrders = [];
         this.init();
       }
 
@@ -613,9 +646,7 @@
           const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
           const data = await res.json();
           this.rubRate = data.rates.RUB;
-        } catch (e) {
-          console.warn('Курс USD/RUB не обновлён, используется 90');
-        }
+        } catch (e) {}
       }
 
       async fetchRates() {
@@ -647,6 +678,7 @@
             opt.classList.add('active');
             this.displayCurrency = opt.dataset.currency;
             this.renderDashboard();
+            this.renderP2P();
           });
         });
       }
@@ -679,11 +711,12 @@
 
       setupDB() {
         return new Promise((resolve, reject) => {
-          const req = indexedDB.open('MindcaseVault', 38);
+          const req = indexedDB.open('MindcaseVault', 40);
           req.onupgradeneeded = e => {
             const db = e.target.result;
             if(!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'name' });
             if(!db.objectStoreNames.contains('transactions')) db.createObjectStore('transactions', { autoIncrement: true, keyPath: 'id' });
+            if(!db.objectStoreNames.contains('p2p')) db.createObjectStore('p2p', { autoIncrement: true, keyPath: 'id' });
           };
           req.onsuccess = e => resolve(e.target.result);
           req.onerror = e => reject(e.target.error);
@@ -791,8 +824,6 @@
           const color = change >= 0 ? 'var(--success)' : 'var(--danger)';
           const arrow = change >= 0 ? 'arrow-up' : 'arrow-down';
           document.getElementById('portfolio-change').innerHTML = `${sign}${change.toFixed(2)}% <i class="fas fa-${arrow}" style="color:${color};"></i>`;
-        } else {
-          document.getElementById('portfolio-change').innerHTML = `+2.72% <i class="fas fa-arrow-up" style="color:var(--success);"></i>`;
         }
         this.previousTotal = totalUSD;
 
@@ -823,6 +854,7 @@
           list.appendChild(div);
         });
         this.renderHistoryList();
+        this.renderP2P();
       }
 
       async showCoinDetail(coin) {
@@ -836,34 +868,39 @@
         const valueUSD = bal * usdPrice;
         const valueDisplay = valueUSD * rate;
 
-        try {
-          const history = await fetch(`https://api.coingecko.com/api/v3/coins/${coin.coingeckoId}/market_chart?vs_currency=usd&days=7&interval=daily`).then(r => r.json());
-          const prices = history.prices.map(p => p[1]);
-          content.innerHTML = `
-            <div class="coin-detail-header">
-              <img src="${coin.icon}" class="coin-detail-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-              <div style="display:none; width:48px; height:48px; border-radius:16px; background:var(--surface-light); align-items:center; justify-content:center; font-size:20px;">${coin.symbol.charAt(0)}</div>
-              <div><h2>${coin.name}</h2><div>${coin.symbol}</div></div>
-            </div>
-            <div class="coin-detail-prices">
-              <div><span class="price-usd">${currencySymbol}${formatNumber(usdPrice * rate)}</span><br><span style="color:${coin.change24h>=0?'var(--success)':'var(--danger)'}"><i class="fas fa-${coin.change24h>=0?'arrow-up':'arrow-down'}"></i> ${coin.change24h>=0?'+':''}${coin.change24h.toFixed(2)}%</span></div>
-              <div class="price-rub">${this.displayCurrency === 'rub' ? '$' : '₽'}${formatNumber(this.displayCurrency === 'rub' ? usdPrice : rubPrice)}</div>
-            </div>
-            <canvas id="coin-chart" style="width:100%; height:150px;"></canvas>
-            <div style="margin-top:20px; display:flex; justify-content:space-between;">
-              <span>Ваш баланс:</span>
-              <span><strong>${formatNumber(bal, 2)} ${coin.symbol}</strong> ≈ ${currencySymbol}${formatNumber(valueDisplay)}</span>
-            </div>
-          `;
-          modal.style.display = 'block';
-          document.getElementById('modal-overlay').style.display = 'flex';
-          const ctx = document.getElementById('coin-chart').getContext('2d');
-          new Chart(ctx, { type: 'line', data: { labels: prices.map((_,i)=>`День ${i+1}`), datasets: [{ data: prices, borderColor: '#0088CC', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.1 }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } } });
-        } catch (e) {
-          content.innerHTML = `<p>Не удалось загрузить график</p>`;
-          modal.style.display = 'block';
-          document.getElementById('modal-overlay').style.display = 'flex';
-        }
+        content.innerHTML = `
+          <div class="coin-detail-header">
+            <img src="${coin.icon}" class="coin-detail-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+            <div style="display:none; width:48px; height:48px; border-radius:16px; background:var(--surface-light); align-items:center; justify-content:center; font-size:20px;">${coin.symbol.charAt(0)}</div>
+            <div><h2>${coin.name}</h2><div>${coin.symbol}</div></div>
+          </div>
+          <div class="coin-detail-prices">
+            <div><span class="price-usd">${currencySymbol}${formatNumber(usdPrice * rate)}</span><br><span style="color:${coin.change24h>=0?'var(--success)':'var(--danger)'}"><i class="fas fa-${coin.change24h>=0?'arrow-up':'arrow-down'}"></i> ${coin.change24h>=0?'+':''}${coin.change24h.toFixed(2)}%</span></div>
+            <div class="price-rub">${this.displayCurrency === 'rub' ? '$' : '₽'}${formatNumber(this.displayCurrency === 'rub' ? usdPrice : rubPrice)}</div>
+          </div>
+          <div class="tv-chart-container" id="tv-chart"></div>
+          <div style="margin-top:20px; display:flex; justify-content:space-between;">
+            <span>Ваш баланс:</span>
+            <span><strong>${formatNumber(bal, 2)} ${coin.symbol}</strong> ≈ ${currencySymbol}${formatNumber(valueDisplay)}</span>
+          </div>
+        `;
+        modal.style.display = 'block';
+        document.getElementById('modal-overlay').style.display = 'flex';
+
+        new TradingView.widget({
+          "width": "100%",
+          "height": 200,
+          "symbol": `${coin.coingeckoId.toUpperCase()}USD`,
+          "interval": "D",
+          "timezone": "Etc/UTC",
+          "theme": "light",
+          "style": "1",
+          "locale": "ru",
+          "toolbar_bg": "#f1f3f6",
+          "enable_publishing": false,
+          "allow_symbol_change": true,
+          "container_id": "tv-chart"
+        });
       }
 
       renderHistoryList() {
@@ -888,6 +925,71 @@
         document.getElementById('tx-detail-content').innerHTML = detail;
         document.getElementById('modal-tx-detail').style.display = 'block';
         document.getElementById('modal-overlay').style.display = 'flex';
+      }
+
+      renderP2P() {
+        const container = document.getElementById('p2p-container');
+        if(!container) return;
+        const rate = this.displayCurrency === 'rub' ? this.rubRate : 1;
+        const currencySymbol = this.displayCurrency === 'rub' ? '₽' : '$';
+        container.innerHTML = COINS.filter(c => (this.user.balances[c.id] || 0) > 0).map(c => {
+          const bal = this.user.balances[c.id] || 0;
+          const usdPrice = c.price;
+          const rubPrice = usdPrice * this.rubRate;
+          return `
+            <div class="p2p-coin-card">
+              <div class="p2p-header">
+                <img src="${c.icon}" class="p2p-coin-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                <div style="display:none; width:36px; height:36px; border-radius:12px; background:var(--surface-light); align-items:center; justify-content:center; font-size:18px;">${c.symbol.charAt(0)}</div>
+                <div>
+                  <div class="p2p-coin-name">${c.name} (${c.symbol})</div>
+                  <div class="p2p-coin-balance">Баланс: ${formatNumber(bal, 2)} ${c.symbol}</div>
+                </div>
+              </div>
+              <div class="p2p-price">${currencySymbol}${formatNumber(usdPrice * rate)}</div>
+              <div class="tv-chart-container" id="tv-p2p-${c.id}" style="height:120px;"></div>
+              <input type="number" id="p2p-amount-${c.id}" class="p2p-input" placeholder="Сумма продажи" min="0" max="${bal}" step="0.01">
+              <input type="text" id="p2p-card-${c.id}" class="p2p-input" placeholder="Номер карты">
+              <div class="p2p-actions">
+                <button class="btn-primary" style="flex:1;" onclick="app.sellP2P('${c.id}')">Продать</button>
+              </div>
+            </div>
+          `;
+        }).join('') || '<p style="color:var(--text-dim); text-align:center;">Нет активов для продажи</p>';
+
+        COINS.filter(c => (this.user.balances[c.id] || 0) > 0).forEach(c => {
+          new TradingView.widget({
+            "width": "100%",
+            "height": 120,
+            "symbol": `${c.coingeckoId.toUpperCase()}USD`,
+            "interval": "D",
+            "timezone": "Etc/UTC",
+            "theme": "light",
+            "style": "1",
+            "locale": "ru",
+            "toolbar_bg": "#f1f3f6",
+            "enable_publishing": false,
+            "allow_symbol_change": false,
+            "container_id": `tv-p2p-${c.id}`
+          });
+        });
+      }
+
+      sellP2P(coinId) {
+        const amount = parseFloat(document.getElementById(`p2p-amount-${coinId}`).value);
+        const card = document.getElementById(`p2p-card-${coinId}`).value.trim();
+        if (isNaN(amount) || amount <= 0) return this.showToast('Введите корректную сумму');
+        if (!card) return this.showToast('Введите номер карты');
+        const coin = COINS.find(c => c.id === coinId);
+        if (this.user.balances[coinId] < amount) return this.showToast('Недостаточно средств');
+
+        this.user.balances[coinId] = Math.round((this.user.balances[coinId] - amount) * 100) / 100;
+        const tx = { from: this.user.name, to: 'P2P Buyer', currency: coinId, amount, description: 'P2P Продажа', timestamp: Date.now() };
+        this.saveTransaction(tx);
+        this.saveUser(this.user);
+        this.renderDashboard();
+        this.showToast(`Продано ${amount} ${coin.symbol} на карту ${card.slice(-4)}`);
+        this.closeModal();
       }
 
       populateSelects() {
@@ -1004,10 +1106,11 @@
       switchView(view) {
         document.getElementById('view-wallet').style.display = view==='wallet'?'flex':'none';
         document.getElementById('view-history').style.display = view==='history'?'flex':'none';
-        document.getElementById('view-browser').style.display = view==='browser'?'flex':'none';
+        document.getElementById('view-p2p').style.display = view==='p2p'?'flex':'none';
         document.getElementById('view-collections').style.display = view==='collections'?'flex':'none';
         document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.view===view));
         if(view==='history') this.renderHistoryList();
+        if(view==='p2p') this.renderP2P();
       }
 
       showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2000); }
